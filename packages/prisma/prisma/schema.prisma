@@ -1,0 +1,1121 @@
+// ============================================================
+// OnlyFlags — Database Schema
+// Design/Development by Photon-Bounce
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ──────────────────────────────────────────────────
+
+enum UserRole {
+  FAN
+  REFEREE
+  ADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum TeamStatus {
+  PENDING
+  ACTIVE
+  ARCHIVED
+}
+
+enum TeamMemberRole {
+  MEMBER
+  CAPTAIN
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ContestStatus {
+  OPEN
+  CLOSED
+}
+
+enum NftType {
+  ATTENDANCE
+  ACHIEVEMENT
+  REFERRAL
+  CONTEST
+  SEASON_PASS
+  HIGHLIGHT
+  RULES_EXPERT
+  SOCIAL_CHAMPION
+  PLAYER_CARD
+  CREATOR
+  TOURNAMENT
+  SUBSCRIPTION_BADGE
+}
+
+enum NftRarity {
+  COMMON
+  UNCOMMON
+  RARE
+  EPIC
+  LEGENDARY
+}
+
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  CANCELLED
+}
+
+enum Currency {
+  POINTS
+  MATIC
+}
+
+enum TokenTxType {
+  EARNED
+  SPENT
+  ADMIN_GRANT
+  STAKING_YIELD
+  AFFILIATE_COMMISSION
+  FANTASY_PRIZE
+  PREDICTION_PRIZE
+  TOURNAMENT_PRIZE
+  CREATOR_SALE
+  SHARE_REWARD
+}
+
+enum ChatPermissionStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  BLOCKED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum AuctionType {
+  ENGLISH
+  DUTCH
+  FIXED_PRICE
+}
+
+enum AuctionStatus {
+  SCHEDULED
+  ACTIVE
+  ENDED
+}
+
+enum StatsStatus {
+  PENDING
+  APPROVED
+}
+
+enum FantasyContestType {
+  HEAD_TO_HEAD
+  TOURNAMENT
+  FIFTY_FIFTY
+}
+
+enum FantasyStatus {
+  OPEN
+  LOCKED
+  SCORING
+  COMPLETED
+}
+
+enum PredictionType {
+  MATCH_WINNER
+  SCORE_RANGE
+  MVP
+  FIRST_TOUCHDOWN
+  CUSTOM
+}
+
+enum PredictionStatus {
+  OPEN
+  LOCKED
+  RESOLVED
+}
+
+enum TournamentFormat {
+  SINGLE_ELIMINATION
+  DOUBLE_ELIMINATION
+  ROUND_ROBIN
+}
+
+enum TournamentStatus {
+  REGISTRATION
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum SubscriptionTier {
+  FREE
+  PRO
+  ELITE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+}
+
+enum CreatorCategory {
+  HIGHLIGHT_COMPILATION
+  PLAYBOOK
+  TRAINING_VIDEO
+  FAN_ART
+}
+
+enum ContentStatus {
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  LISTED
+}
+
+enum WalletType {
+  CUSTODIAL
+  EXTERNAL
+}
+
+enum ContractType {
+  NFT_COLLECTION
+  TOKEN
+  MARKETPLACE
+  SEASON_PASS
+  STAKING
+  AUCTION
+  DYNAMIC_NFT
+  CREATOR_ROYALTY
+}
+
+enum NotificationTarget {
+  ALL
+  TEAM
+  GENDER
+  CITY_STATE
+  INDIVIDUAL
+}
+
+enum SocialPlatform {
+  INSTAGRAM
+  TIKTOK
+  X
+  FACEBOOK
+  SNAPCHAT
+  YOUTUBE
+}
+
+enum ShareContentType {
+  NFT
+  HIGHLIGHT
+  EVENT
+  ACHIEVEMENT
+  REFERRAL
+  PROFILE
+}
+
+enum AffiliateTier {
+  STARTER
+  PRO
+  ELITE
+}
+
+enum CommissionSource {
+  SIGNUP
+  SUPPLEMENT
+  NFT_TRADE
+  SEASON_PASS
+  EVENT_TICKET
+}
+
+enum AttributionSource {
+  URL
+  QR
+  CAMPAIGN
+}
+
+enum PromotionalAssetType {
+  IMAGE
+  BANNER
+  COPY_TEMPLATE
+}
+
+enum MerchOrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+}
+
+enum QuizDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+// ── Models ─────────────────────────────────────────────────
+
+model User {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  phone          String    @unique
+  nickname       String    @unique
+  gender         Gender
+  age            Int
+  bio            String?
+  avatarUrl      String?
+  isPublic       Boolean   @default(true)
+  role           UserRole  @default(FAN)
+  walletAddress  String?
+  tosAcceptedAt  DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relations
+  teamMemberships    TeamMembership[]
+  teamRequests       TeamRequest[]
+  contestEntries     NamingContestEntry[]
+  tokenBalance       TokenBalance?
+  tokenTransactions  TokenTransaction[]
+  ownedNfts          Nft[]                @relation("NftOwner")
+  nftListings        NftListing[]
+  nftSales           NftTransaction[]     @relation("NftSeller")
+  nftPurchases       NftTransaction[]     @relation("NftBuyer")
+  auctionBids        NftAuctionBid[]
+  stakedNfts         StakedNft[]
+  playerStats        PlayerGameStats[]    @relation("PlayerStats")
+  refStats           PlayerGameStats[]    @relation("RefStats")
+  approvedStats      PlayerGameStats[]    @relation("ApprovedStats")
+  chatRequestsSent   ChatPermission[]     @relation("ChatRequester")
+  chatRequestsRecvd  ChatPermission[]     @relation("ChatTarget")
+  orders             Order[]
+  fantasyEntries     FantasyEntry[]
+  predictionWagers   PredictionWager[]
+  subscription       Subscription?
+  creatorContents    CreatorContent[]
+  creatorSalesAsSeller CreatorSale[]      @relation("CreatorSeller")
+  creatorSalesAsBuyer  CreatorSale[]      @relation("CreatorBuyer")
+  merchOrders        MerchOrder[]
+  shareEvents        ShareEvent[]
+  shareStreak        ShareStreak?
+  affiliateProfile   AffiliateProfile?
+  wallet             UserWallet?
+  notifications      PushNotificationLog[] @relation("NotifAdmin")
+  quizAttempts       QuizAttempt[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model Team {
+  id        String     @id @default(uuid())
+  name      String
+  city      String
+  state     String
+  logoUrl   String?
+  status    TeamStatus @default(PENDING)
+  createdAt DateTime   @default(now())
+
+  members            TeamMembership[]
+  homeEvents         GameEvent[]          @relation("HomeTeam")
+  awayEvents         GameEvent[]          @relation("AwayTeam")
+  tournamentEntries  TournamentTeamEntry[]
+  team1Matches       TournamentMatch[]    @relation("Team1")
+  team2Matches       TournamentMatch[]    @relation("Team2")
+  wonMatches         TournamentMatch[]    @relation("MatchWinner")
+  merchProducts      MerchProduct[]
+
+  @@index([city, state])
+  @@map("teams")
+}
+
+model TeamMembership {
+  id       String         @id @default(uuid())
+  userId   String
+  teamId   String
+  role     TeamMemberRole @default(MEMBER)
+  joinedAt DateTime       @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, teamId])
+  @@map("team_memberships")
+}
+
+model TeamRequest {
+  id             String        @id @default(uuid())
+  requesterId    String
+  city           String
+  state          String
+  referralEmails Json
+  status         RequestStatus @default(PENDING)
+  createdAt      DateTime      @default(now())
+
+  requester User @relation(fields: [requesterId], references: [id], onDelete: Cascade)
+
+  @@map("team_requests")
+}
+
+// ── Naming Contests ────────────────────────────────────────
+
+model NamingContest {
+  id        String        @id @default(uuid())
+  city      String
+  state     String
+  status    ContestStatus @default(OPEN)
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime      @default(now())
+
+  entries NamingContestEntry[]
+
+  @@map("naming_contests")
+}
+
+model NamingContestEntry {
+  id            String  @id @default(uuid())
+  contestId     String
+  userId        String
+  suggestedName String
+  isWinner      Boolean @default(false)
+  createdAt     DateTime @default(now())
+
+  contest NamingContest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("naming_contest_entries")
+}
+
+// ── Tokens ─────────────────────────────────────────────────
+
+model TokenBalance {
+  id              String @id @default(uuid())
+  userId          String @unique
+  balance         Float  @default(0)
+  lifetimeEarned  Float  @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("token_balances")
+}
+
+model TokenTransaction {
+  id          String     @id @default(uuid())
+  userId      String
+  amount      Float
+  type        TokenTxType
+  reason      String
+  referenceId String?
+  createdAt   DateTime   @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("token_transactions")
+}
+
+// ── NFTs ───────────────────────────────────────────────────
+
+model Nft {
+  id              String    @id @default(uuid())
+  ownerId         String
+  type            NftType
+  rarity          NftRarity @default(COMMON)
+  name            String
+  description     String
+  imageUrl        String?
+  videoUrl        String?
+  metadata        Json      @default("{}")
+  xp              Int       @default(0)
+  level           Int       @default(1)
+  mintedOnChain   Boolean   @default(false)
+  tokenId         String?
+  contractAddress String?
+  createdAt       DateTime  @default(now())
+
+  owner        User             @relation("NftOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  listings     NftListing[]
+  salesFrom    NftTransaction[] @relation("NftTxAsset")
+  stakedRecord StakedNft?
+
+  @@index([ownerId])
+  @@index([type])
+  @@map("nfts")
+}
+
+model NftListing {
+  id        String        @id @default(uuid())
+  nftId     String
+  sellerId  String
+  price     Float
+  currency  Currency      @default(POINTS)
+  status    ListingStatus @default(ACTIVE)
+  createdAt DateTime      @default(now())
+
+  nft    Nft  @relation(fields: [nftId], references: [id], onDelete: Cascade)
+  seller User @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@map("nft_listings")
+}
+
+model NftTransaction {
+  id         String   @id @default(uuid())
+  nftId      String
+  fromUserId String
+  toUserId   String
+  price      Float
+  currency   Currency
+  createdAt  DateTime @default(now())
+
+  nft      Nft  @relation("NftTxAsset", fields: [nftId], references: [id])
+  fromUser User @relation("NftSeller", fields: [fromUserId], references: [id])
+  toUser   User @relation("NftBuyer", fields: [toUserId], references: [id])
+
+  @@map("nft_transactions")
+}
+
+// ── NFT Auction Drops ──────────────────────────────────────
+
+model NftAuctionDrop {
+  id                   String       @id @default(uuid())
+  name                 String
+  description          String
+  nftTemplateMetadata  Json
+  quantity             Int
+  auctionType          AuctionType
+  startPrice           Float
+  reservePrice         Float?
+  priceDecrement       Float?
+  startTime            DateTime
+  endTime              DateTime
+  status               AuctionStatus @default(SCHEDULED)
+  createdAt            DateTime     @default(now())
+
+  bids NftAuctionBid[]
+
+  @@map("nft_auction_drops")
+}
+
+model NftAuctionBid {
+  id        String   @id @default(uuid())
+  dropId    String
+  userId    String
+  bidAmount Float
+  createdAt DateTime @default(now())
+
+  drop NftAuctionDrop @relation(fields: [dropId], references: [id], onDelete: Cascade)
+  user User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("nft_auction_bids")
+}
+
+// ── Staking ────────────────────────────────────────────────
+
+model StakedNft {
+  id                 String   @id @default(uuid())
+  nftId              String   @unique
+  userId             String
+  stakedAt           DateTime @default(now())
+  lockPeriodDays     Int?
+  lockBonusMultiplier Float   @default(1.0)
+  accumulatedYield   Float    @default(0)
+  lastYieldClaimAt   DateTime @default(now())
+
+  nft  Nft  @relation(fields: [nftId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("staked_nfts")
+}
+
+// ── Events ─────────────────────────────────────────────────
+
+model GameEvent {
+  id              String   @id @default(uuid())
+  teamId          String
+  opponentTeamId  String?
+  venueName       String
+  venueAddress    String
+  dateTime        DateTime
+  description     String?
+  createdAt       DateTime @default(now())
+
+  team           Team              @relation("HomeTeam", fields: [teamId], references: [id])
+  opponentTeam   Team?             @relation("AwayTeam", fields: [opponentTeamId], references: [id])
+  playerStats    PlayerGameStats[]
+  predictionMkts PredictionMarket[]
+  tournamentMatch TournamentMatch?
+
+  @@index([dateTime])
+  @@map("game_events")
+}
+
+// ── Player Game Stats ──────────────────────────────────────
+
+model PlayerGameStats {
+  id               String      @id @default(uuid())
+  playerId         String
+  eventId          String
+  touchdownsThrown Int         @default(0)
+  touchdownsCaught Int         @default(0)
+  yardsGained      Int         @default(0)
+  interceptions    Int         @default(0)
+  flagsPulled      Int         @default(0)
+  completions      Int         @default(0)
+  sacks            Int         @default(0)
+  xpEarned         Int         @default(0)
+  enteredByRefId   String
+  approvedByAdminId String?
+  status           StatsStatus @default(PENDING)
+  createdAt        DateTime    @default(now())
+
+  player      User      @relation("PlayerStats", fields: [playerId], references: [id])
+  event       GameEvent @relation(fields: [eventId], references: [id])
+  enteredBy   User      @relation("RefStats", fields: [enteredByRefId], references: [id])
+  approvedBy  User?     @relation("ApprovedStats", fields: [approvedByAdminId], references: [id])
+
+  @@unique([playerId, eventId])
+  @@map("player_game_stats")
+}
+
+// ── Chat ───────────────────────────────────────────────────
+
+model ChatPermission {
+  id          String               @id @default(uuid())
+  requesterId String
+  targetId    String
+  status      ChatPermissionStatus @default(PENDING)
+  createdAt   DateTime             @default(now())
+
+  requester User @relation("ChatRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  target    User @relation("ChatTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, targetId])
+  @@map("chat_permissions")
+}
+
+// ── Videos ─────────────────────────────────────────────────
+
+model Video {
+  id           String   @id @default(uuid())
+  title        String
+  description  String?
+  url          String
+  thumbnailUrl String?
+  sortOrder    Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  @@map("videos")
+}
+
+// ── Products (Supplements) ─────────────────────────────────
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  price       Float
+  imageUrl    String?
+  externalUrl String?
+  isActive    Boolean  @default(true)
+  stock       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  orderItems OrderItem[]
+
+  @@map("products")
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  userId          String
+  totalPrice      Float
+  status          OrderStatus @default(PENDING)
+  shippingAddress String
+  createdAt       DateTime    @default(now())
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String @id @default(uuid())
+  orderId   String
+  productId String
+  quantity  Int
+  unitPrice Float
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+// ── Fantasy ────────────────────────────────────────────────
+
+model FantasyContest {
+  id            String             @id @default(uuid())
+  name          String
+  type          FantasyContestType
+  entryFee      Float
+  maxEntries    Int
+  prizePool     Float              @default(0)
+  platformRake  Float
+  scoringRules  Json
+  linkedEventIds Json
+  status        FantasyStatus      @default(OPEN)
+  startTime     DateTime
+  endTime       DateTime
+  createdAt     DateTime           @default(now())
+
+  entries FantasyEntry[]
+
+  @@map("fantasy_contests")
+}
+
+model FantasyEntry {
+  id          String   @id @default(uuid())
+  contestId   String
+  userId      String
+  roster      Json
+  totalPoints Float    @default(0)
+  rank        Int?
+  payout      Float    @default(0)
+  createdAt   DateTime @default(now())
+
+  contest FantasyContest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([contestId, userId])
+  @@map("fantasy_entries")
+}
+
+// ── Predictions ────────────────────────────────────────────
+
+model PredictionMarket {
+  id            String           @id @default(uuid())
+  eventId       String
+  question      String
+  type          PredictionType
+  options       Json
+  correctOption String?
+  totalPool     Float            @default(0)
+  platformRake  Float
+  status        PredictionStatus @default(OPEN)
+  createdAt     DateTime         @default(now())
+
+  event  GameEvent         @relation(fields: [eventId], references: [id])
+  wagers PredictionWager[]
+
+  @@map("prediction_markets")
+}
+
+model PredictionWager {
+  id             String   @id @default(uuid())
+  marketId       String
+  userId         String
+  selectedOption String
+  amount         Float
+  payout         Float?
+  createdAt      DateTime @default(now())
+
+  market PredictionMarket @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  user   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("prediction_wagers")
+}
+
+// ── Tournaments ────────────────────────────────────────────
+
+model Tournament {
+  id                String           @id @default(uuid())
+  name              String
+  format            TournamentFormat
+  entryFee          Float
+  prizeDistribution Json
+  platformRake      Float
+  status            TournamentStatus @default(REGISTRATION)
+  startDate         DateTime
+  endDate           DateTime
+  createdAt         DateTime         @default(now())
+
+  teamEntries TournamentTeamEntry[]
+  matches     TournamentMatch[]
+
+  @@map("tournaments")
+}
+
+model TournamentTeamEntry {
+  id           String  @id @default(uuid())
+  tournamentId String
+  teamId       String
+  seed         Int?
+  eliminated   Boolean @default(false)
+  placement    Int?
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  team       Team       @relation(fields: [teamId], references: [id])
+
+  @@unique([tournamentId, teamId])
+  @@map("tournament_team_entries")
+}
+
+model TournamentMatch {
+  id           String  @id @default(uuid())
+  tournamentId String
+  eventId      String? @unique
+  round        Int
+  matchNumber  Int
+  team1Id      String
+  team2Id      String
+  winnerId     String?
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  event      GameEvent? @relation(fields: [eventId], references: [id])
+  team1      Team       @relation("Team1", fields: [team1Id], references: [id])
+  team2      Team       @relation("Team2", fields: [team2Id], references: [id])
+  winner     Team?      @relation("MatchWinner", fields: [winnerId], references: [id])
+
+  @@map("tournament_matches")
+}
+
+// ── Subscriptions ──────────────────────────────────────────
+
+model Subscription {
+  id                   String             @id @default(uuid())
+  userId               String             @unique
+  tier                 SubscriptionTier   @default(FREE)
+  stripeSubscriptionId String?
+  tokenPayment         Boolean            @default(false)
+  startDate            DateTime           @default(now())
+  endDate              DateTime
+  status               SubscriptionStatus @default(ACTIVE)
+  autoRenew            Boolean            @default(true)
+  createdAt            DateTime           @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model SubscriptionTierConfig {
+  id                String           @id @default(uuid())
+  tier              SubscriptionTier @unique
+  name              String
+  priceMonthly      Float
+  priceAnnual       Float
+  tokenPriceMonthly Float
+  perks             Json
+  stakingMultiplier Float            @default(1.0)
+  isActive          Boolean          @default(true)
+
+  @@map("subscription_tier_configs")
+}
+
+// ── Creator Marketplace ────────────────────────────────────
+
+model CreatorContent {
+  id             String          @id @default(uuid())
+  creatorId      String
+  title          String
+  description    String
+  category       CreatorCategory
+  contentUrl     String
+  thumbnailUrl   String?
+  price          Float
+  status         ContentStatus   @default(PENDING_REVIEW)
+  royaltyPercent Float           @default(5)
+  createdAt      DateTime        @default(now())
+
+  creator User          @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  sales   CreatorSale[]
+
+  @@map("creator_contents")
+}
+
+model CreatorSale {
+  id             String   @id @default(uuid())
+  contentId      String
+  sellerId       String
+  buyerId        String
+  price          Float
+  creatorRoyalty  Float
+  platformFee    Float
+  createdAt      DateTime @default(now())
+
+  content CreatorContent @relation(fields: [contentId], references: [id])
+  seller  User           @relation("CreatorSeller", fields: [sellerId], references: [id])
+  buyer   User           @relation("CreatorBuyer", fields: [buyerId], references: [id])
+
+  @@map("creator_sales")
+}
+
+// ── Merch Store ────────────────────────────────────────────
+
+model MerchProduct {
+  id                String   @id @default(uuid())
+  printfulProductId String
+  name              String
+  description       String
+  category          String
+  basePrice         Float
+  platformMargin    Float
+  imageUrl          String?
+  teamId            String?
+  nftUnlockRequired NftType?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+
+  team   Team?        @relation(fields: [teamId], references: [id])
+  orders MerchOrder[]
+
+  @@map("merch_products")
+}
+
+model MerchOrder {
+  id              String          @id @default(uuid())
+  userId          String
+  productId       String
+  printfulOrderId String
+  items           Json
+  totalPrice      Float
+  tokenDiscount   Float           @default(0)
+  status          MerchOrderStatus @default(PENDING)
+  shippingAddress String
+  trackingUrl     String?
+  createdAt       DateTime        @default(now())
+
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product MerchProduct @relation(fields: [productId], references: [id])
+
+  @@map("merch_orders")
+}
+
+// ── Social Sharing ─────────────────────────────────────────
+
+model ShareEvent {
+  id            String           @id @default(uuid())
+  userId        String
+  contentType   ShareContentType
+  contentId     String
+  platform      SocialPlatform
+  deepLinkId    String           @unique
+  tokensAwarded Float            @default(0)
+  createdAt     DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("share_events")
+}
+
+model ShareStreak {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  currentStreak Int      @default(0)
+  longestStreak Int      @default(0)
+  lastShareDate DateTime @default(now())
+  multiplier    Float    @default(1.0)
+  graceDaysUsed Int      @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("share_streaks")
+}
+
+// ── Affiliates ─────────────────────────────────────────────
+
+model AffiliateProfile {
+  id               String       @id @default(uuid())
+  userId           String       @unique
+  affiliateCode    String       @unique
+  tier             AffiliateTier @default(STARTER)
+  totalReferrals   Int          @default(0)
+  lifetimeEarnings Float        @default(0)
+  createdAt        DateTime     @default(now())
+
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referrals   AffiliateReferral[]
+  commissions AffiliateCommission[]
+  campaigns   AffiliateCampaignLink[]
+
+  @@map("affiliate_profiles")
+}
+
+model AffiliateReferral {
+  id               String          @id @default(uuid())
+  affiliateId      String
+  referredUserId   String          @unique
+  attributionSource AttributionSource
+  campaignTag      String?
+  signedUpAt       DateTime        @default(now())
+
+  affiliate   AffiliateProfile    @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  commissions AffiliateCommission[]
+
+  @@map("affiliate_referrals")
+}
+
+model AffiliateCommission {
+  id             String           @id @default(uuid())
+  affiliateId    String
+  referralId     String
+  sourceType     CommissionSource
+  sourceOrderId  String?
+  amount         Float
+  commissionRate Float
+  isMultiLevel   Boolean          @default(false)
+  paidOut        Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+
+  affiliate AffiliateProfile  @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  referral  AffiliateReferral @relation(fields: [referralId], references: [id])
+
+  @@map("affiliate_commissions")
+}
+
+model AffiliateCampaignLink {
+  id              String   @id @default(uuid())
+  affiliateId     String
+  campaignName    String
+  url             String
+  clickCount      Int      @default(0)
+  conversionCount Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  affiliate AffiliateProfile @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+
+  @@map("affiliate_campaign_links")
+}
+
+// ── Wallets ────────────────────────────────────────────────
+
+model UserWallet {
+  id        String     @id @default(uuid())
+  userId    String     @unique
+  type      WalletType @default(CUSTODIAL)
+  address   String     @unique
+  createdAt DateTime   @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_wallets")
+}
+
+// ── Smart Contract Deployments ─────────────────────────────
+
+model SmartContractDeployment {
+  id           String       @id @default(uuid())
+  contractType ContractType
+  address      String
+  chainId      Int
+  config       Json
+  deployedBy   String
+  deployedAt   DateTime     @default(now())
+
+  @@map("smart_contract_deployments")
+}
+
+// ── Platform Config ────────────────────────────────────────
+
+model PlatformConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("platform_configs")
+}
+
+// ── Push Notifications ─────────────────────────────────────
+
+model PushNotificationLog {
+  id           String             @id @default(uuid())
+  adminId      String
+  targetType   NotificationTarget
+  targetFilter Json
+  title        String
+  body         String
+  sentAt       DateTime           @default(now())
+
+  admin User @relation("NotifAdmin", fields: [adminId], references: [id])
+
+  @@map("push_notification_logs")
+}
+
+// ── Rules & Quiz ───────────────────────────────────────────
+
+model RulesCategory {
+  id        String @id @default(uuid())
+  name      String
+  sortOrder Int    @default(0)
+  content   String
+
+  questions QuizQuestion[]
+
+  @@map("rules_categories")
+}
+
+model QuizQuestion {
+  id            String         @id @default(uuid())
+  categoryId    String
+  questionText  String
+  options       Json
+  correctAnswer Int
+  difficulty    QuizDifficulty @default(MEDIUM)
+  isActive      Boolean        @default(true)
+
+  category RulesCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@map("quiz_questions")
+}
+
+model QuizAttempt {
+  id                   String   @id @default(uuid())
+  userId               String
+  score                Int
+  totalQuestions        Int
+  passed               Boolean
+  completionTimeSeconds Int
+  createdAt            DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("quiz_attempts")
+}
+
+// ── Promotional Assets ─────────────────────────────────────
+
+model PromotionalAsset {
+  id          String               @id @default(uuid())
+  title       String
+  type        PromotionalAssetType
+  url         String
+  description String?
+  isActive    Boolean              @default(true)
+  createdAt   DateTime             @default(now())
+
+  @@map("promotional_assets")
+}
