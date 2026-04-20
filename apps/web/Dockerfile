@@ -28,7 +28,8 @@ RUN npm run build --workspace=apps/web
 
 # ── Production image ────────────────────────────────────────
 FROM base AS runner
-ENV NODE_ENV=staging
+ENV NODE_ENV=production
+ENV APP_ENV=staging
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs && \

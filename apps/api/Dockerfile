@@ -31,7 +31,8 @@ RUN npm run build --workspace=apps/api
 
 # ── Production image ────────────────────────────────────────
 FROM base AS runner
-ENV NODE_ENV=staging
+ENV NODE_ENV=production
+ENV APP_ENV=staging
 
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nestjs
