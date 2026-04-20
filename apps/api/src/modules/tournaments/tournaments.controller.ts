@@ -1,13 +1,14 @@
 import { Controller, Get, Post, Param, Body, Query, UseGuards, Request } from "@nestjs/common";
 import { TournamentsService } from "./tournaments.service";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
+import { TournamentFormat, TournamentStatus } from "@prisma/client";
 
 @Controller("tournaments")
 export class TournamentsController {
   constructor(private tournamentsService: TournamentsService) {}
 
   @Get()
-  async list(@Query("status") status?: string) {
+  async list(@Query("status") status?: TournamentStatus) {
     return this.tournamentsService.list(status);
   }
 
@@ -23,8 +24,8 @@ export class TournamentsController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  async create(@Body() body: { name: string; format: string; maxTeams: number; entryFeeTokens: number; startDate: string; location?: string; description?: string }) {
-    return this.tournamentsService.create({ ...body, startDate: new Date(body.startDate) });
+  async create(@Body() body: { name: string; format: TournamentFormat; entryFee: number; platformRake: number; startDate: string; endDate: string; prizeDistribution: object }) {
+    return this.tournamentsService.create({ ...body, startDate: new Date(body.startDate), endDate: new Date(body.endDate) });
   }
 
   @Post(":id/register")

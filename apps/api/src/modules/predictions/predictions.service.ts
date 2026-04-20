@@ -1,11 +1,12 @@
 import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
+import { PredictionType, PredictionStatus } from "@prisma/client";
 
 @Injectable()
 export class PredictionsService {
   constructor(private prisma: PrismaService) {}
 
-  async listMarkets(status?: string) {
+  async listMarkets(status?: PredictionStatus) {
     const where = status ? { status } : {};
     return this.prisma.predictionMarket.findMany({
       where,
@@ -23,34 +24,32 @@ export class PredictionsService {
     return market;
   }
 
-  async createMarket(data: { title: string; description?: string; type: string; options: any; eventId?: string; closesAt: Date }) {
+  async createMarket(data: { question: string; type: PredictionType; options: any; eventId: string; platformRake: number }) {
     return this.prisma.predictionMarket.create({
       data: {
-        title: data.title,
-        description: data.description,
+        question: data.question,
         type: data.type,
         options: data.options,
         eventId: data.eventId,
-        closesAt: data.closesAt,
+        platformRake: data.platformRake,
         totalPool: 0,
-        status: "OPEN",
+        status: PredictionStatus.OPEN,
       },
     });
   }
 
-  async placeWager(marketId: string, userId: string, selection: string, amount: number) {
+  async placeWager(marketId: string, userId: string, selectedOption: string, amount: number) {
     const market = await this.prisma.predictionMarket.findUnique({ where: { id: marketId } });
     if (!market) throw new NotFoundException("Market not found");
     if (market.status !== "OPEN") throw new BadRequestException("Market is closed");
-    if (new Date() > market.closesAt) throw new BadRequestException("Betting window has closed");
     if (amount <= 0) throw new BadRequestException("Amount must be positive");
 
     const wager = await this.prisma.predictionWager.create({
-      data: { marketId, userId, selection, amount },
+      data: { marketId, userId, selectedOption, amount },
     });
 
-    // Update pool (minus 10% rake)
-    const rake = Math.floor(amount * 0.1);
+    // Update pool (minus platform rake)
+    const rake = Math.floor(amount * market.platformRake);
     await this.prisma.predictionMarket.update({
       where: { id: marketId },
       data: { totalPool: { increment: amount - rake } },

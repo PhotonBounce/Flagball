@@ -37,7 +37,7 @@ export class UsersService {
       affiliateTier: user.affiliateProfile?.tier,
       subscriptionTier: user.subscription?.tier ?? "FREE",
       shareStreak: user.shareStreak?.currentStreak ?? 0,
-      teams: user.teamMemberships.map((m) => ({
+      teams: user.teamMemberships.map((m: { team: { id: string; name: string; city: string; state: string }; role: string }) => ({
         id: m.team.id,
         name: m.team.name,
         city: m.team.city,
@@ -66,7 +66,7 @@ export class UsersService {
       age: user.age,
       bio: user.bio,
       avatarUrl: user.avatarUrl,
-      teams: user.teamMemberships.map((m) => ({
+      teams: user.teamMemberships.map((m: { team: { id: string; name: string; city: string; state: string } }) => ({
         id: m.team.id,
         name: m.team.name,
         city: m.team.city,
