@@ -1,0 +1,93 @@
+# ============================================================
+# OnlyFlags — Docker Compose (Staging)
+# Design/Development by Photon-Bounce
+#
+# Usage:
+#   docker compose -f docker-compose.staging.yml up --build
+#
+# This brings up the full OnlyFlags stack for client demos:
+#   - PostgreSQL 16
+#   - Redis 7
+#   - API   (NestJS)  → http://localhost:4000
+#   - Web   (Next.js) → http://localhost:3000
+#   - Admin (Next.js) → http://localhost:3001
+# ============================================================
+
+services:
+  # ── Database ──────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: onlyflags-staging-db
+    environment:
+      POSTGRES_DB: onlyflags_staging
+      POSTGRES_USER: onlyflags
+      POSTGRES_PASSWORD: onlyflags_staging
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_staging:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U onlyflags -d onlyflags_staging"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Cache ─────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: onlyflags-staging-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata_staging:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── API (NestJS) ──────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: onlyflags-staging-api
+    env_file: .env.staging
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Web (Next.js) ─────────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: onlyflags-staging-web
+    env_file: .env.staging
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # ── Admin (Next.js) ───────────────────────────────────────
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+    container_name: onlyflags-staging-admin
+    env_file: .env.staging
+    ports:
+      - "3001:3001"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  pgdata_staging:
+  redisdata_staging:
