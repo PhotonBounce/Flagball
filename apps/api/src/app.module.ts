@@ -15,6 +15,11 @@ import { TokensModule } from "./modules/tokens/tokens.module";
 import { NftsModule } from "./modules/nfts/nfts.module";
 import { EventsModule } from "./modules/events/events.module";
 import { HealthModule } from "./modules/health/health.module";
+import { AffiliatesModule } from "./modules/affiliates/affiliates.module";
+import { FantasyModule } from "./modules/fantasy/fantasy.module";
+import { PredictionsModule } from "./modules/predictions/predictions.module";
+import { SharingModule } from "./modules/sharing/sharing.module";
+import { TournamentsModule } from "./modules/tournaments/tournaments.module";
 
 @Module({
   imports: [
@@ -38,6 +43,11 @@ import { HealthModule } from "./modules/health/health.module";
     TokensModule,
     NftsModule,
     EventsModule,
+    AffiliatesModule,
+    FantasyModule,
+    PredictionsModule,
+    SharingModule,
+    TournamentsModule,
   ],
 })
 export class AppModule {}

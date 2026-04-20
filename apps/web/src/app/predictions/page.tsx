@@ -201,7 +201,7 @@ export default function PredictionsPage() {
                         >
                           <div className="text-xs font-semibold text-white mb-1">
                             {opt.label}
-                            {isWinner && <span className="ml-1 text-[#2EC4B6]">Winner</span>}
+                            {isWinner && <span className="ml-1 text-[#2EC4B6]"> Winner</span>}
                           </div>
                           <div className="text-sm font-black" style={{ color: tc.color }}>{opt.odds.toFixed(2)}x</div>
                           <div className="h-1 rounded-full mt-2 mx-auto" style={{ background: "var(--of-bg-deep)", width: "80%" }}>
