@@ -8,7 +8,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main, copilot/quick-update-for-client, copilot/check-app-staging-status]
+    branches: [main]
     paths: [pitch-deck.html, .github/workflows/pages.yml]
   workflow_dispatch:
 
@@ -44,14 +44,14 @@ jobs:
           if [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "409" ]; then
             echo "✅ Pages is enabled"
           elif [ "$HTTP_CODE" = "401" ] || [ "$HTTP_CODE" = "403" ]; then
-            echo "::error::Permissions error ($HTTP_CODE). Enable Pages manually: Settings → Pages → Source → GitHub Actions"
-            exit 1
+            echo "::warning::Permissions error ($HTTP_CODE). If Pages is not yet enabled, do it manually once: Settings → Pages → Source → GitHub Actions"
           else
             echo "::warning::Unexpected status $HTTP_CODE — continuing anyway"
           fi
 
   deploy:
     needs: enable-pages
+    if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages
