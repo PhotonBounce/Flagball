@@ -8,7 +8,8 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [copilot/quick-update-for-client]
+    branches: [main, copilot/quick-update-for-client]
+    paths: [pitch-deck.html]
   workflow_dispatch:
 
 permissions:
