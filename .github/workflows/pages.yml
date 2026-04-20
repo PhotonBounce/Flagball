@@ -8,8 +8,8 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main, copilot/quick-update-for-client]
-    paths: [pitch-deck.html]
+    branches: [main, copilot/quick-update-for-client, copilot/check-app-staging-status]
+    paths: [pitch-deck.html, .github/workflows/pages.yml]
   workflow_dispatch:
 
 permissions:
@@ -22,7 +22,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  enable-pages:
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      contents: read
+    steps:
+      - name: Enable GitHub Pages (if not already enabled)
+        run: |
+          # Try to enable Pages with GitHub Actions as the build source.
+          # This call is idempotent — it succeeds silently if already enabled.
+          HTTP_CODE=$(curl -s -o /tmp/pages_response.json -w "%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer ${{ github.token }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages" \
+            -d '{"build_type":"workflow"}')
+          echo "HTTP status: $HTTP_CODE"
+          cat /tmp/pages_response.json
+          # 201 = created, 409 = already exists — both are fine
+          if [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "409" ]; then
+            echo "✅ Pages is enabled"
+          elif [ "$HTTP_CODE" = "401" ] || [ "$HTTP_CODE" = "403" ]; then
+            echo "::error::Permissions error ($HTTP_CODE). Enable Pages manually: Settings → Pages → Source → GitHub Actions"
+            exit 1
+          else
+            echo "::warning::Unexpected status $HTTP_CODE — continuing anyway"
+          fi
+
   deploy:
+    needs: enable-pages
     runs-on: ubuntu-latest
     environment:
       name: github-pages
