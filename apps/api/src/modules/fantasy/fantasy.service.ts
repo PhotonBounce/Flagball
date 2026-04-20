@@ -1,11 +1,12 @@
 import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
+import { FantasyContestType, FantasyStatus } from "@prisma/client";
 
 @Injectable()
 export class FantasyService {
   constructor(private prisma: PrismaService) {}
 
-  async listContests(status?: string) {
+  async listContests(status?: FantasyStatus) {
     const where = status ? { status } : {};
     return this.prisma.fantasyContest.findMany({ where, orderBy: { startTime: "asc" }, include: { _count: { select: { entries: true } } } });
   }
@@ -19,21 +20,25 @@ export class FantasyService {
     return contest;
   }
 
-  async createContest(data: { name: string; type: string; entryFeeTokens: number; maxEntries: number; startTime: Date }) {
+  async createContest(data: { name: string; type: FantasyContestType; entryFee: number; maxEntries: number; startTime: Date; endTime: Date; platformRake: number; scoringRules: object; linkedEventIds: object }) {
     return this.prisma.fantasyContest.create({
       data: {
         name: data.name,
         type: data.type,
-        entryFeeTokens: data.entryFeeTokens,
-        prizePoolTokens: 0,
+        entryFee: data.entryFee,
+        prizePool: 0,
         maxEntries: data.maxEntries,
         startTime: data.startTime,
-        status: "OPEN",
+        endTime: data.endTime,
+        platformRake: data.platformRake,
+        scoringRules: data.scoringRules as any,
+        linkedEventIds: data.linkedEventIds as any,
+        status: FantasyStatus.OPEN,
       },
     });
   }
 
-  async enterContest(contestId: string, userId: string, lineup: Record<string, string>) {
+  async enterContest(contestId: string, userId: string, roster: Record<string, string>) {
     const contest = await this.prisma.fantasyContest.findUnique({
       where: { id: contestId },
       include: { _count: { select: { entries: true } } },
@@ -46,15 +51,15 @@ export class FantasyService {
     if (existing) throw new BadRequestException("Already entered this contest");
 
     const entry = await this.prisma.fantasyEntry.create({
-      data: { contestId, userId, lineup },
+      data: { contestId, userId, roster },
     });
 
-    // Add entry fee to prize pool (minus 10% rake)
-    const fee = contest.entryFeeTokens;
-    const rake = Math.floor(fee * 0.1);
+    // Add entry fee to prize pool (minus rake)
+    const fee = contest.entryFee;
+    const rake = Math.floor(fee * contest.platformRake);
     await this.prisma.fantasyContest.update({
       where: { id: contestId },
-      data: { prizePoolTokens: { increment: fee - rake } },
+      data: { prizePool: { increment: fee - rake } },
     });
 
     return entry;

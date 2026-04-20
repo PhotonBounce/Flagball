@@ -1,13 +1,14 @@
 import { Controller, Get, Post, Param, Body, Query, UseGuards, Request } from "@nestjs/common";
 import { PredictionsService } from "./predictions.service";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
+import { PredictionType, PredictionStatus } from "@prisma/client";
 
 @Controller("predictions")
 export class PredictionsController {
   constructor(private predictionsService: PredictionsService) {}
 
   @Get("markets")
-  async listMarkets(@Query("status") status?: string) {
+  async listMarkets(@Query("status") status?: PredictionStatus) {
     return this.predictionsService.listMarkets(status);
   }
 
@@ -18,14 +19,14 @@ export class PredictionsController {
 
   @Post("markets")
   @UseGuards(JwtAuthGuard)
-  async createMarket(@Body() body: { title: string; description?: string; type: string; options: any; eventId?: string; closesAt: string }) {
-    return this.predictionsService.createMarket({ ...body, closesAt: new Date(body.closesAt) });
+  async createMarket(@Body() body: { question: string; type: PredictionType; options: any; eventId: string; platformRake: number }) {
+    return this.predictionsService.createMarket(body);
   }
 
   @Post("markets/:id/wager")
   @UseGuards(JwtAuthGuard)
-  async placeWager(@Param("id") id: string, @Request() req: any, @Body() body: { selection: string; amount: number }) {
-    return this.predictionsService.placeWager(id, req.user.id, body.selection, body.amount);
+  async placeWager(@Param("id") id: string, @Request() req: any, @Body() body: { selectedOption: string; amount: number }) {
+    return this.predictionsService.placeWager(id, req.user.id, body.selectedOption, body.amount);
   }
 
   @Get("my-wagers")

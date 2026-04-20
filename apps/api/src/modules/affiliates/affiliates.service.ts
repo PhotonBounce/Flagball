@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
+import { AffiliateTier } from "@prisma/client";
 
 @Injectable()
 export class AffiliatesService {
@@ -8,7 +9,7 @@ export class AffiliatesService {
   async getProfile(userId: string) {
     return this.prisma.affiliateProfile.findUnique({
       where: { userId },
-      include: { referrals: { take: 10, orderBy: { createdAt: "desc" } }, commissions: { take: 10, orderBy: { createdAt: "desc" } }, campaignLinks: true },
+      include: { referrals: { take: 10, orderBy: { signedUpAt: "desc" } }, commissions: { take: 10, orderBy: { createdAt: "desc" } }, campaigns: true },
     });
   }
 
@@ -18,12 +19,12 @@ export class AffiliatesService {
 
     const code = `OF-${userId.slice(0, 8).toUpperCase()}`;
     return this.prisma.affiliateProfile.create({
-      data: { userId, referralCode: code, tier: "BRONZE" },
+      data: { userId, affiliateCode: code, tier: AffiliateTier.STARTER },
     });
   }
 
-  async trackReferral(referralCode: string, referredUserId: string) {
-    const profile = await this.prisma.affiliateProfile.findUnique({ where: { referralCode } });
+  async trackReferral(affiliateCode: string, referredUserId: string) {
+    const profile = await this.prisma.affiliateProfile.findUnique({ where: { affiliateCode } });
     if (!profile) throw new BadRequestException("Invalid referral code");
     if (profile.userId === referredUserId) throw new BadRequestException("Cannot refer yourself");
 
@@ -33,14 +34,14 @@ export class AffiliatesService {
     if (existing) return existing;
 
     const referral = await this.prisma.affiliateReferral.create({
-      data: { affiliateProfileId: profile.id, referredUserId, status: "PENDING" },
+      data: { affiliateId: profile.id, referredUserId, attributionSource: "URL" },
     });
 
     // Update referral count and check tier upgrade
-    const count = await this.prisma.affiliateReferral.count({ where: { affiliateProfileId: profile.id } });
-    let tier = "BRONZE";
-    if (count >= 50) tier = "GOLD";
-    else if (count >= 15) tier = "SILVER";
+    const count = await this.prisma.affiliateReferral.count({ where: { affiliateId: profile.id } });
+    let tier: AffiliateTier = AffiliateTier.STARTER;
+    if (count >= 200) tier = AffiliateTier.ELITE;
+    else if (count >= 50) tier = AffiliateTier.PRO;
 
     await this.prisma.affiliateProfile.update({
       where: { id: profile.id },
@@ -53,13 +54,13 @@ export class AffiliatesService {
   async getCampaignLinks(userId: string) {
     const profile = await this.prisma.affiliateProfile.findUnique({ where: { userId } });
     if (!profile) return [];
-    return this.prisma.affiliateCampaignLink.findMany({ where: { affiliateProfileId: profile.id } });
+    return this.prisma.affiliateCampaignLink.findMany({ where: { affiliateId: profile.id } });
   }
 
-  async createCampaignLink(userId: string, name: string, utmSource: string) {
+  async createCampaignLink(userId: string, campaignName: string, utmSource: string) {
     const profile = await this.createOrGetProfile(userId);
     return this.prisma.affiliateCampaignLink.create({
-      data: { affiliateProfileId: profile.id, name, url: `https://onlyflags.com/join?ref=${profile.referralCode}&utm_source=${utmSource}`, utmSource, clicks: 0, conversions: 0 },
+      data: { affiliateId: profile.id, campaignName, url: `https://onlyflags.com/join?ref=${profile.affiliateCode}&utm_source=${utmSource}` },
     });
   }
 }

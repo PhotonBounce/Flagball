@@ -18,8 +18,8 @@ export class AffiliatesController {
   }
 
   @Post("referral")
-  async trackReferral(@Request() req: any, @Body() body: { referralCode: string }) {
-    return this.affiliatesService.trackReferral(body.referralCode, req.user.id);
+  async trackReferral(@Request() req: any, @Body() body: { affiliateCode: string }) {
+    return this.affiliatesService.trackReferral(body.affiliateCode, req.user.id);
   }
 
   @Get("campaigns")
@@ -28,7 +28,7 @@ export class AffiliatesController {
   }
 
   @Post("campaigns")
-  async createCampaign(@Request() req: any, @Body() body: { name: string; utmSource: string }) {
-    return this.affiliatesService.createCampaignLink(req.user.id, body.name, body.utmSource);
+  async createCampaign(@Request() req: any, @Body() body: { campaignName: string; utmSource: string }) {
+    return this.affiliatesService.createCampaignLink(req.user.id, body.campaignName, body.utmSource);
   }
 }
