@@ -8,8 +8,8 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main, copilot/quick-update-for-client]
-    paths: [pitch-deck.html]
+    branches: [main, copilot/quick-update-for-client, copilot/check-app-staging-status]
+    paths: [pitch-deck.html, .github/workflows/pages.yml]
   workflow_dispatch:
 
 permissions:
@@ -33,6 +33,8 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Prepare site
         run: |
